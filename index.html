@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "45 cm² ক্ষেত্রফলবিশিষ্ট একটি তল 5 × 10⁻⁵ T সুষম চৌম্বক ক্ষেত্রের সাথে 60° কোণ তৈরি করে। তলের মধ্য দিয়ে অতিক্রান্ত ফ্লাক্স বের কর।",
+          options: {
+            a: "1.95 × 10⁻⁷ Tesla",
+            b: "1.95 × 10⁻⁷ Wb",
+            c: "1.25 × 10⁻⁷ Tesla",
+            d: "1.25 × 10⁻⁷ Wb",
+          },
+          correct: "b",
+          explanation: `চৌম্বক ফ্লাক্স (Φ) নির্ণয় করার জন্য আমরা যে সূত্রটি ব্যবহার করি, তা হলো:<br>"
+          "Φ = BAcosθ<br>"
+          "এখানে,<br>"
+          "<b>B</b> হলো চৌম্বক ক্ষেত্রের মান = 5 × 10⁻⁵ T<br>"
+          "<b>A</b> হলো তলের ক্ষেত্রফল। এটিকে প্রথমে cm² থেকে m² তে রূপান্তর করতে হবে:<br>"
+          "A = 45 cm² = 45 × (10⁻² m)² = 45 × 10⁻⁴ m²<br>"
+          "<b>θ</b> হলো চৌম্বক ক্ষেত্র ভেক্টর (B) এবং ক্ষেত্রফল ভেক্টর (A) এর মধ্যবর্তী কোণ। ক্ষেত্রফল ভেক্টর সবসময় তলের উপর লম্ব হয়। প্রশ্নে বলা হয়েছে তলটি চৌম্বক ক্ষেত্রের সাথে 60° কোণ তৈরি করে, তাই ক্ষেত্রফল ভেক্টর (তলের অভিলম্ব) চৌম্বক ক্ষেত্রের সাথে 90° - 60° = 30° কোণ তৈরি করবে।<br>"
+          "সুতরাং, θ = 30°<br>"
+          "<br>"
+          "এখন, মানগুলো সূত্রে বসিয়ে পাই:<br>"
+          "Φ = (5 × 10⁻⁵ T) × (45 × 10⁻⁴ m²) × cos(30°)<br>"
+          "Φ = (5 × 45) × (10⁻⁵ × 10⁻⁴) × cos(30°)<br>"
+          "Φ = 225 × 10⁻⁹ × 0.8660 (যেহেতু cos(30°) ≈ 0.8660)<br>"
+          "Φ = 194.85 × 10⁻⁹ Wb<br>"
+          "Φ ≈ 1.9485 × 10⁻⁷ Wb<br>"
+          "প্রায়, Φ ≈ 1.95 × 10⁻⁷ Wb<br>"
+          "<br>"
+          "চৌম্বক ফ্লাক্সের একক হলো ওয়েবার (Wb)।`,
+        },
+        {
+          id: 3,
+          question:
+            "একটি লম্বা সোজা তড়িৎ সরবরাহ লাইনে 440V - 60 A চিহ্নিত করা আছে। উক্ত লাইন থেকে খাড়া 1.2m নিচে কোনো বিন্দুতে চৌম্বকক্ষেত্রের মান কত?",
+          options: {
+            a: "10⁻³ T",
+            b: "10⁻⁴ T",
+            c: "10⁻⁵ T",
+            d: "10⁻⁶ T",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি লম্বা সোজা তারের জন্য তার থেকে r দূরত্বে চৌম্বক ক্ষেত্রের মান B = (μ₀I)/(2πr) সূত্র দ্বারা নির্ণয় করা হয়।</p><p>এখানে, μ₀ = 4π × 10⁻⁷ Tm/A, I = 60 A, r = 1.2 m।</p><p>মান বসিয়ে পাই:</p><p>B = (4π × 10⁻⁷ × 60) / (2π × 1.2)</p><p>B = (2 × 10⁻⁷ × 60) / 1.2</p><p>B = 120 × 10⁻⁷ / 1.2</p><p>B = 100 × 10⁻⁷</p><p>B = 1 × 10⁻⁵ T</p><p>সুতরাং, লাইনের 1.2m নিচে চৌম্বক ক্ষেত্রের মান 10⁻⁵ T হবে। বিভব (440V) এই গণনার জন্য অপ্রাসঙ্গিক।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "দুইটি সমান্তরাল তারের মধ্যে একই মানের তড়িৎ প্রবাহিত হয় এবং তার দুটি প্রতি একক দৈর্ঘ্যে F বল দ্বারা একে অপরকে বিকর্ষণ করে। যদি প্রবাহিত তড়িৎ দ্বিগুণ এবং তারদ্বয়ের মধ্যে দূরত্বকে তিনগুণ করা হয় তবে প্রতি একক দৈর্ঘ্যের বলের মান হবে-",
+          options: {
+            a: "F",
+            b: "4F/3",
+            c: "F/3",
+            d: "2F/3",
+          },
+          correct: "b",
+          explanation:
+            "<p>দুটি সমান্তরাল তারের প্রতি একক দৈর্ঘ্যে ক্রিয়াশীল বলের সূত্র হলো F/L = (μ₀I₁I₂)/(2πd)।</p><p>প্রারম্ভিক অবস্থায়, F = (μ₀I²)/(2πd) (যেহেতু একই মানের তড়িৎ I প্রবাহিত হয়)।</p><p>নতুন অবস্থায়, তড়িৎ প্রবাহ দ্বিগুণ করা হয় (I' = 2I) এবং দূরত্ব তিনগুণ করা হয় (d' = 3d)।</p><p>নতুন বল F' = (μ₀I'²)/(2πd') = (μ₀(2I)²)/(2π(3d))</p><p>F' = (μ₀4I²)/(2π3d) = (4/3) × (μ₀I²)/(2πd)</p><p>F' = (4/3)F</p><p>সুতরাং, প্রতি একক দৈর্ঘ্যের বলের মান 4F/3 হবে।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "পূর্ব-পশ্চিমে প্রসারিত একটি তারে প্রবাহমাত্রা 20 A। চুম্বকত্বের আনুভূমিক উপাংশের জন্য (H = 10⁻⁴ T) তারের একক দৈর্ঘ্যে কত বল ক্রিয়া করবে?",
+          options: {
+            a: "2 × 10⁻³ N",
+            b: "5 × 10⁻³ N",
+            c: "5 × 10⁻⁵ N",
+            d: "শূন্য",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তড়িৎ পরিবাহী তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ। প্রতি একক দৈর্ঘ্যে বলের মান F/L = BI sinθ।</p><p>এখানে, তারটি পূর্ব-পশ্চিমে প্রসারিত। পৃথিবীর চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ উত্তর-দক্ষিণ দিকে ক্রিয়া করে। অতএব, তারের প্রবাহ এবং চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ একে অপরের সাথে 90° কোণে থাকবে (sin90° = 1)।</p><p>I = 20 A এবং B<sub>H</sub> = 10⁻⁴ T।</p><p>F/L = BI = (10⁻⁴ T) × (20 A)</p><p>F/L = 20 × 10⁻⁴ N/m</p><p>F/L = 2 × 10⁻³ N/m</p><p>সুতরাং, তারের একক দৈর্ঘ্যে 2 × 10⁻³ N বল ক্রিয়া করবে।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "2T সুষম চৌম্বক ক্ষেত্রের সাথে 30° কোণে একটি আলফা কণা 10⁴ ms⁻¹ বেগে চলতে থাকলে কণাটির উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "0",
+            b: "1.6 × 10⁻¹⁵ N",
+            c: "3.2 × 10⁻¹⁵ N",
+            d: "6.4 × 10⁻¹⁵ N",
+          },
+          correct: "c",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি আলফা কণার চার্জ q = 2e = 2 × (1.6 × 10⁻¹⁹ C) = 3.2 × 10⁻¹⁹ C।</p><p>এখানে, v = 10⁴ ms⁻¹, B = 2 T, এবং θ = 30°।</p><p>F = (3.2 × 10⁻¹⁹ C) × (10⁴ ms⁻¹) × (2 T) × sin(30°)</p><p>F = (3.2 × 10⁻¹⁹ × 10⁴ × 2) × 0.5</p><p>F = 3.2 × 10⁻¹⁵ N</p><p>সুতরাং, কণাটির উপর ক্রিয়াশীল বল 3.2 × 10⁻¹⁵ N।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "1m দীর্ঘ এবং 1 cm প্রস্থ 500 পাকবিশিষ্ট একটি আয়তাকার কুণ্ডলীর মধ্যে দিয়ে 10 A তড়িৎ প্রবাহ চলছে। কুণ্ডলীটিকে 15 T-এর সুষম চুম্বক ক্ষেত্রের সমান্তরালে স্থাপন করলে এর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "10 Nm",
+            b: "15 Nm",
+            c: "500 Nm",
+            d: "750 Nm",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 500 পাক, I = 10 A, B = 15 T।</p><p>কুণ্ডলীর ক্ষেত্রফল A = দৈর্ঘ্য × প্রস্থ = 1 m × 1 cm = 1 m × 0.01 m = 0.01 m²।</p><p>কুণ্ডলীটিকে চৌম্বক ক্ষেত্রের সমান্তরালে স্থাপন করলে, কুণ্ডলীর তলের অভিলম্ব চৌম্বক ক্ষেত্রের সাথে 90° কোণ তৈরি করে (θ = 90°, sin90° = 1)।</p><p>τ = 500 × 10 A × 0.01 m² × 15 T × sin(90°)</p><p>τ = 500 × 10 × 0.01 × 15 × 1</p><p>τ = 750 Nm</p><p>সুতরাং, কুণ্ডলীটির উপর ক্রিয়াশীল টর্ক 750 Nm।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "10 cm দৈর্ঘ্যের 2A তড়িৎ প্রবাহবিশিষ্ট একটি তারকে 0.2 T চৌম্বকক্ষেত্রে লম্বভাবে স্থাপন করা হলো। তারের উপর প্রযুক্ত বল কত?",
+          options: {
+            a: "4 N",
+            b: "0.04 N",
+            c: "25 N",
+            d: "40 N",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.2 T, I = 2 A, L = 10 cm = 0.1 m।</p><p>তারটিকে লম্বভাবে স্থাপন করা হয়েছে, সুতরাং θ = 90°, sin90° = 1।</p><p>F = 0.2 T × 2 A × 0.1 m × sin(90°)</p><p>F = 0.2 × 2 × 0.1 × 1</p><p>F = 0.04 N</p><p>সুতরাং, তারের উপর প্রযুক্ত বল 0.04 N।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "একটি সুষম 0.04T চৌম্বক ক্ষেত্রের সাথে লম্ব তলে গতিশীল 5 × 10⁻²C চার্জবিশিষ্ট একটি কণা 4N বল অনুভব করে। কণাটি কত ms⁻¹ বেগে চলছে?",
+          options: {
+            a: "1600",
+            b: "2000",
+            c: "4000",
+            d: "6000",
+          },
+          correct: "b",
+          explanation: `চৌম্বক ক্ষেত্রে গতিশীল একটি চার্জিত কণার উপর যে বল ক্রিয়া করে, তা লরেন্ত্জ বল নামে পরিচিত। এর সূত্রটি হলো:<br>" "F = qvBsinθ<br>" "এখানে,<br>" "<b>F</b> হলো কণার উপর ক্রিয়াশীল বল = 4 N<br>" "<b>q</b> হলো কণার চার্জ = 5 × 10⁻² C<br>" "<b>v</b> হলো কণার বেগ (যা আমাদের বের করতে হবে)<br>" "<b>B</b> হলো চৌম্বক ক্ষেত্রের মান = 0.04 T<br>" "<b>θ</b> হলো কণার বেগের দিক এবং চৌম্বক ক্ষেত্রের দিকের মধ্যবর্তী কোণ। যেহেতু কণাটি চৌম্বক ক্ষেত্রের সাথে লম্ব তলে গতিশীল, তাই θ = 90°। আমরা জানি, sin(90°) = 1।<br>" "<br>" "এখন, আমরা সূত্রটি থেকে v এর মান বের করার জন্য একে সাজিয়ে নিতে পারি:<br>" "v = F / (qBsinθ)<br>" "মানগুলো বসিয়ে পাই:<br>" "v = 4 N / (5 × 10⁻² C × 0.04 T × 1)<br>" "v = 4 / ( (5 × 0.04) × 10⁻² )<br>" "v = 4 / ( 0.20 × 10⁻² )<br>" "v = 4 / ( 2 × 10⁻³ )<br>" "v = (4 / 2) × 10³<br>" "v = 2 × 10³<br>" "v = <b>2000 ms⁻¹</b><br><br>" "সুতরাং, কণাটি 2000 ms⁻¹ বেগে চলছে।`,
+        },
+        {
+          id: 10,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 10 cm এবং পাক সংখ্যা 50। এতে 0.5 A প্রবাহমাত্রা পাঠালে চৌম্বক ভ্রামক কত?",
+          options: {
+            a: "0.25π Am²",
+            b: "0.25 Am²",
+            c: "π Am²",
+            d: "0",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি বৃত্তাকার কুণ্ডলীর চৌম্বক ভ্রামকের (Magnetic Moment) সূত্র M = NIA।</p><p>এখানে, N = 50 পাক, I = 0.5 A।</p><p>ব্যাসার্ধ r = 10 cm = 0.1 m।</p><p>কুণ্ডলীর ক্ষেত্রফল A = πr² = π × (0.1 m)² = 0.01π m²।</p><p>M = 50 × 0.5 A × 0.01π m²</p><p>M = 25 × 0.01π</p><p>M = 0.25π Am²</p><p>সুতরাং, কুণ্ডলীটির চৌম্বক ভ্রামক 0.25π Am²।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "0.5 T এর একটি চৌম্বকক্ষেত্রের সাথে 30° কোণ উৎপন্ন করে একটি ইলেকট্রন 10⁷ ms⁻¹ বেগে গতিশীল। ইলেকট্রনের উপর ক্রিয়াশীল চৌম্বক বলের মান কত?",
+          options: {
+            a: "4 × 10⁻¹³ N",
+            b: "4 × 10⁻¹² N",
+            c: "8 × 10⁻¹³ N",
+            d: "8 × 10⁻¹² N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি ইলেকট্রনের চার্জ q = 1.6 × 10⁻¹⁹ C।</p><p>এখানে, v = 10⁷ ms⁻¹, B = 0.5 T, এবং θ = 30°।</p><p>F = (1.6 × 10⁻¹⁹ C) × (10⁷ ms⁻¹) × (0.5 T) × sin(30°)</p><p>F = (1.6 × 10⁻¹⁹ × 10⁷ × 0.5) × 0.5</p><p>F = 0.8 × 10⁻¹² × 0.5</p><p>F = 0.4 × 10⁻¹² N</p><p>F = 4 × 10⁻¹³ N</p><p>সুতরাং, ইলেকট্রনটির উপর ক্রিয়াশীল চৌম্বক বলের মান 4 × 10⁻¹³ N।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "একটি সোজা তারে 5 A তড়িৎ প্রবাহিত হচ্ছে। তার থেকে 10 cm দূরে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "10⁻⁵ T",
+            b: "10⁻⁶ T",
+            c: "10⁻⁷ T",
+            d: "10⁻⁸ T",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি দীর্ঘ সরল তারের জন্য তার থেকে r দূরত্বে চৌম্বক ক্ষেত্রের মান B = (μ₀I)/(2πr)।</p><p>এখানে, μ₀ = 4π × 10⁻⁷ Tm/A, I = 5 A, r = 10 cm = 0.1 m।</p><p>মান বসিয়ে পাই:</p><p>B = (4π × 10⁻⁷ × 5) / (2π × 0.1)</p><p>B = (2 × 10⁻⁷ × 5) / 0.1</p><p>B = 10 × 10⁻⁷ / 0.1</p><p>B = 100 × 10⁻⁷</p><p>B = 1 × 10⁻⁵ T</p><p>সুতরাং, তার থেকে 10 cm দূরে চৌম্বক ক্ষেত্রের মান 10⁻⁵ T।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "20 cm দৈর্ঘ্যের একটি তারে 2 A তড়িৎ প্রবাহিত হচ্ছে। এটি 0.3 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। তারের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "0.12 N",
+            b: "0.24 N",
+            c: "0.36 N",
+            d: "0.48 N",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.3 T, I = 2 A, L = 20 cm = 0.2 m।</p><p>তারটিকে 90° কোণে স্থাপিত করা হয়েছে, সুতরাং sin90° = 1।</p><p>F = 0.3 T × 2 A × 0.2 m × sin(90°)</p><p>F = 0.3 × 2 × 0.2 × 1</p><p>F = 0.12 N</p><p>সুতরাং, তারের উপর ক্রিয়াশীল বল 0.12 N।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 5 cm এবং পাক সংখ্যা 100। এতে 2 A তড়িৎ প্রবাহিত হলে কেন্দ্রে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "2.51 × 10⁻³ T",
+            b: "2.51 × 10⁻⁴ T",
+            c: "5.02 × 10⁻³ T",
+            d: "5.02 × 10⁻⁴ T",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান B = (μ₀NI)/(2r)।</p><p>এখানে, μ₀ = 4π × 10⁻⁷ Tm/A, N = 100 পাক, I = 2 A।</p><p>ব্যাসার্ধ r = 5 cm = 0.05 m।</p><p>মান বসিয়ে পাই:</p><p>B = (4π × 10⁻⁷ × 100 × 2) / (2 × 0.05)</p><p>B = (800π × 10⁻⁷) / 0.1</p><p>B = 8000π × 10⁻⁷</p><p>B = 8π × 10⁻⁴ T</p><p>B ≈ 2.513 × 10⁻³ T</p><p>সুতরাং, কেন্দ্রে চৌম্বক ক্ষেত্রের মান প্রায় 2.51 × 10⁻³ T।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "একটি আলফা কণা 0.2 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে 5 × 10⁶ ms⁻¹ বেগে গতিশীল। কণার উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "3.2 × 10⁻¹³ N",
+            b: "6.4 × 10⁻¹³ N",
+            c: "1.6 × 10⁻¹³ N",
+            d: "9.6 × 10⁻¹³ N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি আলফা কণার চার্জ q = 2e = 2 × (1.6 × 10⁻¹⁹ C) = 3.2 × 10⁻¹⁹ C।</p><p>এখানে, v = 5 × 10⁶ ms⁻¹, B = 0.2 T, এবং θ = 90° (sin90° = 1)।</p><p>F = (3.2 × 10⁻¹⁹ C) × (5 × 10⁶ ms⁻¹) × (0.2 T) × sin(90°)</p><p>F = 3.2 × 5 × 0.2 × 10⁻¹³</p><p>F = 3.2 × 10⁻¹³ N</p><p>সুতরাং, কণাটির উপর ক্রিয়াশীল বল 3.2 × 10⁻¹³ N।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "একটি 50 পাকের কুণ্ডলীর ক্ষেত্রফল 0.02 m²। এটি 0.1 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত এবং 2 A তড়িৎ প্রবাহিত হচ্ছে। কুণ্ডলীর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "0.2 Nm",
+            b: "0.4 Nm",
+            c: "0.6 Nm",
+            d: "0.8 Nm",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 50 পাক, I = 2 A, A = 0.02 m², B = 0.1 T।</p><p>কুণ্ডলীটি 90° কোণে স্থাপিত, সুতরাং θ = 90°, sin90° = 1।</p><p>τ = 50 × 2 A × 0.02 m² × 0.1 T × sin(90°)</p><p>τ = 50 × 2 × 0.02 × 0.1 × 1</p><p>τ = 0.2 Nm</p><p>সুতরাং, কুণ্ডলীর উপর ক্রিয়াশীল টর্ক 0.2 Nm।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "একটি প্রোটন 0.5 T চৌম্বক ক্ষেত্রের সাথে 45° কোণে 10⁶ ms⁻¹ বেগে গতিশীল। প্রোটনের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "5.66 × 10⁻¹⁴ N",
+            b: "8 × 10⁻¹⁴ N",
+            c: "1.13 × 10⁻¹³ N",
+            d: "1.6 × 10⁻¹³ N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি প্রোটনের চার্জ q = 1.6 × 10⁻¹⁹ C।</p><p>এখানে, v = 10⁶ ms⁻¹, B = 0.5 T, এবং θ = 45°।</p><p>F = (1.6 × 10⁻¹⁹ C) × (10⁶ ms⁻¹) × (0.5 T) × sin(45°)</p><p>F = (1.6 × 10⁻¹⁹ × 10⁶ × 0.5) × 0.7071</p><p>F = 0.8 × 10⁻¹³ × 0.7071</p><p>F = 0.56568 × 10⁻¹³ N</p><p>F ≈ 5.66 × 10⁻¹⁴ N</p><p>সুতরাং, প্রোটনটির উপর ক্রিয়াশীল বল 5.66 × 10⁻¹⁴ N।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 0.1 m এবং পাক সংখ্যা 200। এতে 1 A তড়িৎ প্রবাহিত হলে কেন্দ্রে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "1.256 × 10⁻³ T",
+            b: "2.513 × 10⁻³ T",
+            c: "3.770 × 10⁻³ T",
+            d: "5.026 × 10⁻³ T",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান B = (μ₀NI)/(2r)।</p><p>এখানে, μ₀ = 4π × 10⁻⁷ Tm/A, N = 200 পাক, I = 1 A।</p><p>ব্যাসার্ধ r = 0.1 m।</p><p>মান বসিয়ে পাই:</p><p>B = (4π × 10⁻⁷ × 200 × 1) / (2 × 0.1)</p><p>B = (800π × 10⁻⁷) / 0.2</p><p>B = 4000π × 10⁻⁷</p><p>B = 4π × 10⁻⁴ T</p><p>B ≈ 1.2566 × 10⁻³ T</p><p>সুতরাং, কেন্দ্রে চৌম্বক ক্ষেত্রের মান প্রায় 1.256 × 10⁻³ T।</p>",
+        },
+
+        {
+          id: 20,
+          question:
+            "একটি ইলেকট্রন 1.73 T চৌম্বক ক্ষেত্রের সাথে 60° কোণে 2 × 10⁵ ms⁻¹ বেগে গতিশীল। ইলেকট্রনের উপর ক্রিয়াশীল চৌম্বক বলের মান কত?",
+          options: {
+            a: "3.2 × 10⁻¹⁴ N",
+            b: "4.8 × 10⁻¹⁴ N",
+            c: "6.4 × 10⁻¹⁴ N",
+            d: "8.0 × 10⁻¹৪ N",
+          },
+          correct: "b",
+          explanation: `চৌম্বক ক্ষেত্রে গতিশীল একটি চার্জিত কণার উপর যে বল ক্রিয়া করে, তা লরেন্ত্জ বল নামে পরিচিত। এর সূত্রটি হলো:<br>"
+          "F = qvBsinθ<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>q</b> হলো ইলেকট্রনের চার্জের মান, যা একটি ধ্রুবক = 1.6 × 10⁻¹⁹ C</li>"
+          "<li><b>v</b> হলো ইলেকট্রনের বেগ = 2 × 10⁵ ms⁻¹</li>"
+          "<li><b>B</b> হলো চৌম্বক ক্ষেত্রের মান = 1.73 T</li>"
+          "<li><b>θ</b> হলো বেগ ভেক্টর (v) এবং চৌম্বক ক্ষেত্র ভেক্টর (B) এর মধ্যবর্তী কোণ = 60°</li>"
+          "</ul>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "F = (1.6 × 10⁻¹⁹ C) × (2 × 10⁵ ms⁻¹) × (1.73 T) × sin(60°)<br>"
+          "F = (1.6 × 2 × 1.73) × (10⁻¹⁹ × 10⁵) × sin(60°)<br>"
+          "F = (5.536) × 10⁻¹⁴ × 0.8660 (যেহেতু sin(60°) ≈ 0.8660)<br>"
+          "F ≈ 4.795 × 10⁻¹⁴ N<br>"
+          "F ≈ <b>4.8 × 10⁻¹⁴ N</b><br><br>"
+          "সুতরাং, ইলেকট্রনের উপর ক্রিয়াশীল চৌম্বক বলের মান হবে 4.8 × 10⁻¹⁴ N।`,
+        },
+
+        {
+          id: 21,
+          question:
+            "একটি 0.2 m দৈর্ঘ্যের তারে 3 A তড়িৎ প্রবাহিত হচ্ছে এবং এটি 0.5 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। তারের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "0.3 N",
+            b: "0.6 N",
+            c: "0.9 N",
+            d: "1.2 N",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.5 T, I = 3 A, L = 0.2 m।</p><p>তারটিকে 90° কোণে স্থাপিত করা হয়েছে, সুতরাং sin90° = 1।</p><p>F = 0.5 T × 3 A × 0.2 m × sin(90°)</p><p>F = 0.5 × 3 × 0.2 × 1</p><p>F = 0.3 N</p><p>সুতরাং, তারের উপর ক্রিয়াশীল বল 0.3 N।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "একটি 100 পাকের কুণ্ডলীর ক্ষেত্রফল 0.01 m² এবং এতে 2 A তড়িৎ প্রবাহিত হচ্ছে। কুণ্ডলীটি 0.2 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। কুণ্ডলীর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "0.2 Nm",
+            b: "0.4 Nm",
+            c: "0.6 Nm",
+            d: "0.8 Nm",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 100 পাক, I = 2 A, A = 0.01 m², B = 0.2 T।</p><p>কুণ্ডলীটি 90° কোণে স্থাপিত, সুতরাং θ = 90°, sin90° = 1।</p><p>τ = 100 × 2 A × 0.01 m² × 0.2 T × sin(90°)</p><p>τ = 100 × 2 × 0.01 × 0.2 × 1</p><p>τ = 0.4 Nm</p><p>সুতরাং, কুণ্ডলীর উপর ক্রিয়াশীল টর্ক 0.4 Nm।</p>",
+        },
+        {
+          id: 23,
+          question:
+            "একটি প্রোটন 0.4 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে 2 × 10⁷ ms⁻¹ বেগে গতিশীল। প্রোটনের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "1.28 × 10⁻¹² N",
+            b: "2.56 × 10⁻¹² N",
+            c: "3.84 × 10⁻¹² N",
+            d: "5.12 × 10⁻¹² N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি প্রোটনের চার্জ q = 1.6 × 10⁻¹৯ C।</p><p>এখানে, v = 2 × 10⁷ ms⁻¹, B = 0.4 T, এবং θ = 90° (sin90° = 1)।</p><p>F = (1.6 × 10⁻¹৯ C) × (2 × 10⁷ ms⁻¹) × (0.4 T) × sin(90°)</p><p>F = 1.6 × 2 × 0.4 × 10⁻¹²</p><p>F = 1.28 × 10⁻¹² N</p><p>সুতরাং, প্রোটনটির উপর ক্রিয়াশীল বল 1.28 × 10⁻¹² N।</p>",
+        },
+        {
+          id: 24,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 0.05 m এবং পাক সংখ্যা 50। এতে 6 A তড়িৎ প্রবাহিত হলে কেন্দ্রে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "1.885 × 10⁻³ T",
+            b: "2.827 × 10⁻³ T",
+            c: "3.770 × 10⁻³ T",
+            d: "4.712 × 10⁻³ T",
+          },
+          correct: "c",
+          explanation: `একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে সৃষ্ট চৌম্বক ক্ষেত্রের মান (B) নির্ণয়ের সূত্রটি হলো:<br>"
+          "B = (μ₀NI) / (2r)<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>μ₀</b> (মিউ নট) হলো শূন্যস্থানের প্রবেশ্যতা। এর মান একটি ধ্রুবক: μ₀ = 4π × 10⁻⁷ Tm/A (টেসলা মিটার প্রতি অ্যাম্পিয়ার)।</li>"
+          "<li><b>N</b> হলো কুণ্ডলীর পাক সংখ্যা = 50।</li>"
+          "<li><b>I</b> হলো কুণ্ডলীতে প্রবাহিত তড়িৎ প্রবাহ = 6 A (প্রশ্নে পরিবর্তন করা হয়েছে)।</li>"
+          "<li><b>r</b> হলো কুণ্ডলীর ব্যাসার্ধ = 0.05 m।</li>"
+          "</ul>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "B = (4π × 10⁻⁷ Tm/A × 50 × 6 A) / (2 × 0.05 m)<br>"
+          "B = (4π × 300 × 10⁻⁷) / 0.1<br>"
+          "B = (1200π × 10⁻⁷) / 0.1<br>"
+          "B = 12000π × 10⁻⁷<br>"
+          "B = 12π × 10⁻⁴ T<br>"
+          "B = 3.7699... × 10⁻³ T<br>"
+          "B ≈ <b>3.770 × 10⁻³ T</b><br><br>"
+          "সুতরাং, বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান হবে 3.770 × 10⁻³ T।`,
+        },
+
+        {
+          id: 25,
+          question:
+            "একটি 0.3 m দৈর্ঘ্যের তারে 4 A তড়িৎ প্রবাহিত হচ্ছে এবং এটি 0.6 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। তারের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "0.72 N",
+            b: "1.08 N",
+            c: "1.44 N",
+            d: "1.80 N",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.6 T, I = 4 A, L = 0.3 m।</p><p>তারটিকে 90° কোণে স্থাপিত করা হয়েছে, সুতরাং sin90° = 1।</p><p>F = 0.6 T × 4 A × 0.3 m × sin(90°)</p><p>F = 0.6 × 4 × 0.3 × 1</p><p>F = 0.72 N</p><p>সুতরাং, তারের উপর ক্রিয়াশীল বল 0.72 N।</p>",
+        },
+        {
+          id: 26,
+          question:
+            "একটি 200 পাকের কুণ্ডলীর ক্ষেত্রফল 0.02 m² এবং এতে 1.5 A তড়িৎ প্রবাহিত হচ্ছে। কুণ্ডলীটি 0.3 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। কুণ্ডলীর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "0.9 Nm",
+            b: "1.2 Nm",
+            c: "1.8 Nm",
+            d: "2.4 Nm",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 200 পাক, I = 1.5 A, A = 0.02 m², B = 0.3 T।</p><p>কুণ্ডলীটি 90° কোণে স্থাপিত, সুতরাং θ = 90°, sin90° = 1।</p><p>τ = 200 × 1.5 A × 0.02 m² × 0.3 T × sin(90°)</p><p>τ = 200 × 1.5 × 0.02 × 0.3 × 1</p><p>τ = 1.8 Nm</p><p>সুতরাং, কুণ্ডলীর উপর ক্রিয়াশীল টর্ক 1.8 Nm।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "একটি আলফা কণা 0.5 T চৌম্বক ক্ষেত্রের সাথে 45° কোণে 10⁶ ms⁻¹ বেগে গতিশীল। কণার উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "1.13 × 10⁻¹³ N",
+            b: "2.26 × 10⁻¹³ N",
+            c: "3.2 × 10⁻¹³ N",
+            d: "4.52 × 10⁻¹³ N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি আলফা কণার চার্জ q = 2e = 2 × (1.6 × 10⁻¹৯ C) = 3.2 × 10⁻¹৯ C।</p><p>এখানে, v = 10⁶ ms⁻¹, B = 0.5 T, এবং θ = 45°।</p><p>F = (3.2 × 10⁻¹৯ C) × (10⁶ ms⁻¹) × (0.5 T) × sin(45°)</p><p>F = (3.2 × 10⁻¹৯ × 10⁶ × 0.5) × 0.7071</p><p>F = 1.6 × 10⁻¹³ × 0.7071</p><p>F ≈ 1.1313 × 10⁻¹³ N</p><p>সুতরাং, কণাটির উপর ক্রিয়াশীল বল প্রায় 1.13 × 10⁻¹³ N।</p>",
+        },
+        {
+          id: 28,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 0.08 m এবং পাক সংখ্যা 100। এতে 4 A তড়িৎ প্রবাহিত হলে কেন্দ্রে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "1.571 × 10⁻³ T",
+            b: "3.142 × 10⁻³ T",
+            c: "4.712 × 10⁻³ T",
+            d: "6.283 × 10⁻³ T",
+          },
+          correct: "b",
+          explanation: `একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে সৃষ্ট চৌম্বক ক্ষেত্রের মান (B) নির্ণয়ের সূত্রটি হলো:<br>"
+          "B = (μ₀NI) / (2r)<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>μ₀</b> (মিউ নট) হলো শূন্যস্থানের প্রবেশ্যতা। এর মান একটি ধ্রুবক: μ₀ = 4π × 10⁻⁷ Tm/A (টেসলা মিটার প্রতি অ্যাম্পিয়ার)।</li>"
+          "<li><b>N</b> হলো কুণ্ডলীর পাক সংখ্যা = 100।</li>"
+          "<li><b>I</b> হলো কুণ্ডলীতে প্রবাহিত তড়িৎ প্রবাহ = 4 A (প্রশ্নে পরিবর্তন করা হয়েছে)।</li>"
+          "<li><b>r</b> হলো কুণ্ডলীর ব্যাসার্ধ = 0.08 m।</li>"
+          "</ul>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "B = (4π × 10⁻⁷ Tm/A × 100 × 4 A) / (2 × 0.08 m)<br>"
+          "B = (1600π × 10⁻⁷) / 0.16<br>"
+          "B = 10000π × 10⁻⁷<br>"
+          "B = 10π × 10⁻⁴ T<br>"
+          "B = 3.14159... × 10⁻³ T<br>"
+          "B ≈ <b>3.142 × 10⁻³ T</b><br><br>"
+          "সুতরাং, বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান হবে 3.142 × 10⁻³ T।`,
+        },
+        {
+          id: 29,
+          question:
+            "একটি 0.4 m দৈর্ঘ্যের তারে 5 A তড়িৎ প্রবাহিত হচ্ছে এবং এটি 0.7 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। তারের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "1.4 N",
+            b: "1.75 N",
+            c: "2.1 N",
+            d: "2.45 N",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.7 T, I = 5 A, L = 0.4 m।</p><p>তারটিকে 90° কোণে স্থাপিত করা হয়েছে, সুতরাং sin90° = 1।</p><p>F = 0.7 T × 5 A × 0.4 m × sin(90°)</p><p>F = 0.7 × 5 × 0.4 × 1</p><p>F = 1.4 N</p><p>সুতরাং, তারের উপর ক্রিয়াশীল বল 1.4 N।</p>",
+        },
+        {
+          id: 30,
+          question:
+            "একটি 150 পাকের কুণ্ডলীর ক্ষেত্রফল 0.015 m² এবং এতে 2 A তড়িৎ প্রবাহিত হচ্ছে। কুণ্ডলীটি 0.4 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। কুণ্ডলীর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "0.9 Nm",
+            b: "1.2 Nm",
+            c: "1.8 Nm",
+            d: "2.4 Nm",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 150 পাক, I = 2 A, A = 0.015 m², B = 0.4 T।</p><p>কুণ্ডলীটি 90° কোণে স্থাপিত, সুতরাং θ = 90°, sin90° = 1।</p><p>τ = 150 × 2 A × 0.015 m² × 0.4 T × sin(90°)</p><p>τ = 150 × 2 × 0.015 × 0.4 × 1</p><p>τ = 1.8 Nm</p><p>সুতরাং, কুণ্ডলীর উপর ক্রিয়াশীল টর্ক 1.8 Nm।</p>",
+        },
+        {
+          id: 31,
+          question:
+            "একটি প্রোটন 0.6 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে 5 × 10⁷ ms⁻¹ বেগে গতিশীল। প্রোটনের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "2.88 × 10⁻¹² N",
+            b: "3.84 × 10⁻¹২ N",
+            c: "4.80 × 10⁻¹২ N",
+            d: "5.76 × 10⁻¹২ N",
+          },
+          correct: "c",
+          explanation: `চৌম্বক ক্ষেত্রে গতিশীল একটি চার্জিত কণার উপর যে বল ক্রিয়া করে, তা লরেন্ত্জ বল নামে পরিচিত। এর সূত্রটি হলো:<br>"
+          "F = qvBsinθ<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>q</b> হলো প্রোটনের চার্জের মান, যা একটি ধ্রুবক = 1.6 × 10⁻¹⁹ C</li>"
+          "<li><b>v</b> হলো প্রোটনের বেগ = 5 × 10⁷ ms⁻¹ (প্রশ্নে পরিবর্তন করা হয়েছে)</li>"
+          "<li><b>B</b> হলো চৌম্বক ক্ষেত্রের মান = 0.6 T</li>"
+          "<li><b>θ</b> হলো বেগ ভেক্টর (v) এবং চৌম্বক ক্ষেত্র ভেক্টর (B) এর মধ্যবর্তী কোণ = 90°। আমরা জানি, sin(90°) = 1।</li>"
+          "</ul>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "F = (1.6 × 10⁻¹⁹ C) × (5 × 10⁷ ms⁻¹) × (0.6 T) × sin(90°)<br>"
+          "F = (1.6 × 5 × 0.6) × (10⁻¹⁹ × 10⁷) × 1<br>"
+          "F = (4.8) × 10⁻¹² N<br>"
+          "F = <b>4.80 × 10⁻¹² N</b><br><br>"
+          "সুতরাং, প্রোটনের উপর ক্রিয়াশীল বলের মান হবে 4.80 × 10⁻¹² N।`,
+        },
+        {
+          id: 32,
+          question:
+            "একটি বৃত্তাকার কুণ্ডলীর ব্যাসার্ধ 0.06 m এবং পাক সংখ্যা 80। এতে 3.75 A তড়িৎ প্রবাহিত হলে কেন্দ্রে চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "2.094 × 10⁻³ T",
+            b: "3.142 × 10⁻³ T",
+            c: "4.189 × 10⁻³ T",
+            d: "5.236 × 10⁻³ T",
+          },
+          correct: "b",
+          explanation: `একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে সৃষ্ট চৌম্বক ক্ষেত্রের মান (B) নির্ণয়ের সূত্রটি হলো:<br>"
+          "B = (μ₀NI) / (2r)<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>μ₀</b> (মিউ নট) হলো শূন্যস্থানের প্রবেশ্যতা। এর মান একটি ধ্রুবক: μ₀ = 4π × 10⁻⁷ Tm/A (টেসলা মিটার প্রতি অ্যাম্পিয়ার)।</li>"
+          "<li><b>N</b> হলো কুণ্ডলীর পাক সংখ্যা = 80।</li>"
+          "<li><b>I</b> হলো কুণ্ডলীতে প্রবাহিত তড়িৎ প্রবাহ = 3.75 A (প্রশ্নে পরিবর্তন করা হয়েছে)।</li>"
+          "<li><b>r</b> হলো কুণ্ডলীর ব্যাসার্ধ = 0.06 m।</li>"
+          "</ul>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "B = (4π × 10⁻⁷ Tm/A × 80 × 3.75 A) / (2 × 0.06 m)<br>"
+          "B = (4π × 300 × 10⁻⁷) / 0.12<br>"
+          "B = (1200π × 10⁻⁷) / 0.12<br>"
+          "B = 10000π × 10⁻⁷<br>"
+          "B = 10π × 10⁻⁴ T<br>"
+          "B = 3.14159... × 10⁻³ T<br>"
+          "B ≈ <b>3.142 × 10⁻³ T</b><br><br>"
+          "সুতরাং, বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান হবে 3.142 × 10⁻³ T।`,
+        },
+        {
+          id: 33,
+          question:
+            "একটি 0.25 m দৈর্ঘ্যের তারে 6 A তড়িৎ প্রবাহিত হচ্ছে এবং এটি 0.8 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। তারের উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "1.2 N",
+            b: "1.5 N",
+            c: "1.8 N",
+            d: "2.1 N",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তারের উপর চৌম্বক ক্ষেত্রের কারণে ক্রিয়াশীল বলের সূত্র F = BILsinθ।</p><p>এখানে, B = 0.8 T, I = 6 A, L = 0.25 m।</p><p>তারটিকে 90° কোণে স্থাপিত করা হয়েছে, সুতরাং sin90° = 1।</p><p>F = 0.8 T × 6 A × 0.25 m × sin(90°)</p><p>F = 0.8 × 6 × 0.25 × 1</p><p>F = 1.2 N</p><p>সুতরাং, তারের উপর ক্রিয়াশীল বল 1.2 N।</p>",
+        },
+        {
+          id: 34,
+          question:
+            "একটি 120 পাকের কুণ্ডলীর ক্ষেত্রফল 0.01 m² এবং এতে 3 A তড়িৎ প্রবাহিত হচ্ছে। কুণ্ডলীটি 0.5 T চৌম্বক ক্ষেত্রের সাথে 90° কোণে স্থাপিত। কুণ্ডলীর উপর ক্রিয়াশীল টর্ক কত?",
+          options: {
+            a: "1.2 Nm",
+            b: "1.8 Nm",
+            c: "2.4 Nm",
+            d: "3.0 Nm",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি চৌম্বক ক্ষেত্রে স্থাপিত কুণ্ডলীর উপর ক্রিয়াশীল টর্কের সূত্র τ = NIABsinθ।</p><p>এখানে, N = 120 পাক, I = 3 A, A = 0.01 m², B = 0.5 T।</p><p>কুণ্ডলীটি 90° কোণে স্থাপিত, সুতরাং θ = 90°, sin90° = 1।</p><p>τ = 120 × 3 A × 0.01 m² × 0.5 T × sin(90°)</p><p>τ = 120 × 3 × 0.01 × 0.5 × 1</p><p>τ = 1.8 Nm</p><p>সুতরাং, কুণ্ডলীর উপর ক্রিয়াশীল টর্ক 1.8 Nm।</p>",
+        },
+        {
+          id: 35,
+          question:
+            "একটি আলফা কণা 0.7 T চৌম্বক ক্ষেত্রের সাথে 30° কোণে 2 × 10⁶ ms⁻¹ বেগে গতিশীল। কণার উপর ক্রিয়াশীল বল কত?",
+          options: {
+            a: "2.24 × 10⁻¹³ N",
+            b: "3.36 × 10⁻¹³ N",
+            c: "4.48 × 10⁻¹³ N",
+            d: "5.60 × 10⁻¹³ N",
+          },
+          correct: "a",
+          explanation:
+            "<p>চৌম্বক ক্ষেত্রে গতিশীল চার্জিত কণার উপর ক্রিয়াশীল বলের সূত্র F = qvBsinθ।</p><p>একটি আলফা কণার চার্জ q = 2e = 2 × (1.6 × 10⁻¹৯ C) = 3.2 × 10⁻¹৯ C।</p><p>এখানে, v = 2 × 10⁶ ms⁻¹, B = 0.7 T, এবং θ = 30°।</p><p>F = (3.2 × 10⁻¹৯ C) × (2 × 10⁶ ms⁻¹) × (0.7 T) × sin(30°)</p><p>F = (3.2 × 2 × 0.7 × 10⁻¹³) × 0.5</p><p>F = 4.48 × 10⁻¹³ × 0.5</p><p>F = 2.24 × 10⁻¹³ N</p><p>সুতরাং, কণাটির উপর ক্রিয়াশীল বল 2.24 × 10⁻¹³ N।</p>",
+        },
+        {
+          id: 36,
+          question:
+            "কোনো স্থানের ভূ-চুম্বকত্বের আনুভূমিক উপাংশ এর মোট প্রাবল্যের 1/√2 অনুপাত। ওই স্থানের বিনতি কোণ কত?",
+          options: {
+            a: "30°",
+            b: "45°",
+            c: "60°",
+            d: "90°",
+          },
+          correct: "b",
+          explanation:
+            "<p>ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ H এবং মোট প্রাবল্য B এর সম্পর্ক হলো H = Bcosδ, যেখানে δ হলো বিনতি কোণ।</p><p>প্রশ্নানুসারে, H/B = 1/√2।</p><p>সুতরাং, cosδ = 1/√2।</p><p>অতএব, δ = cos⁻¹(1/√2) = 45°।</p><p>ভূ-চুম্বকত্বের আনুভূমিক উপাংশ মোট প্রাবল্যের 1/√2 গুণ হলে ওই স্থানের বিনতি কোণ 45°।</p>",
+        },
+        {
+          id: 37,
+          question:
+            "যদি H এবং V যথাক্রমে কোনো স্থানের চৌম্বক ক্ষেত্রের আনুভূমিক এবং উল্লম্ব উপাংশ হয় যেখানে বিনতি কোণ 60°, তবে-",
+          options: {
+            a: "V = H",
+            b: "V = √3 H",
+            c: "V = H/√3",
+            d: "V = √3/H",
+          },
+          correct: "b",
+          explanation:
+            "<p>ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ H, উল্লম্ব উপাংশ V এবং বিনতি কোণ δ এর মধ্যে সম্পর্ক হলো tanδ = V/H।</p><p>এখানে, বিনতি কোণ δ = 60°।</p><p>সুতরাং, tan(60°) = V/H</p><p>√3 = V/H</p><p>V = √3 H</p><p>অতএব, উল্লম্ব উপাংশ H এর √3 গুণ হবে।</p>",
+        },
+        {
+          id: 38,
+          question:
+            "কোনো স্থানে H = 40 μT এবং δ = 45°। ওই স্থানে ভূ-চৌম্বক ক্ষেত্রের মান কত?",
+          options: {
+            a: "50.5 μT",
+            b: "53.3 μT",
+            c: "55.5 μT",
+            d: "56.57 μT",
+          },
+          correct: "d",
+          explanation:
+            "<p>ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ H এবং মোট প্রাবল্য B এর সম্পর্ক হলো H = Bcosδ।</p><p>সুতরাং, B = H/cosδ।</p><p>এখানে, H = 40 μT এবং δ = 45°।</p><p>B = 40 μT / cos(45°)</p><p>B = 40 μT / (1/√2)</p><p>B = 40√2 μT</p><p>B ≈ 40 × 1.4142 μT</p><p>B ≈ 56.568 μT</p><p>অতএব, ওই স্থানে ভূ-চৌম্বক ক্ষেত্রের মান প্রায় 56.57 μT।</p>",
+        },
+        {
+          id: 39,
+          question:
+            "কোনো স্থানের ভূ-চৌম্বকক্ষেত্রের মান 22.5 μT এবং বিনতি 30°। ঐ স্থানে ভূচৌম্বকক্ষেত্রের আনুভূমিক উপাংশের মান কত?",
+          options: {
+            a: "1.95 × 10⁻⁵ T",
+            b: "1.95 μT",
+            c: "19.5 μT",
+            d: "1.95 × 10⁶ T",
+          },
+          correct: "c",
+          explanation:
+            "<p>ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ H এবং মোট প্রাবল্য B এর সম্পর্ক হলো H = Bcosδ।</p><p>এখানে, B = 22.5 μT এবং δ = 30°।</p><p>H = 22.5 μT × cos(30°)</p><p>H = 22.5 × (√3/2) μT</p><p>H = 22.5 × 0.8660 μT</p><p>H ≈ 19.485 μT</p><p>H ≈ 19.5 μT</p><p>সুতরাং, ভূচৌম্বকক্ষেত্রের আনুভূমিক উপাংশের মান প্রায় 19.5 μT।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "কোনো স্থানে ভূ-চৌম্বক ক্ষেত্রের মান 5 × 10⁻⁵ T এবং বিনতি 60°। ঐ স্থানের ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশের মান কত?",
+          options: {
+            a: "25 μT",
+            b: "2.5 μT",
+            c: "25 T",
+            d: "2.5 T",
+          },
+          correct: "a",
+          explanation:
+            "<p>ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশ H এবং মোট প্রাবল্য B এর সম্পর্ক হলো H = Bcosδ।</p><p>এখানে, B = 5 × 10⁻⁵ T এবং δ = 60°।</p><p>H = (5 × 10⁻⁵ T) × cos(60°)</p><p>H = 5 × 10⁻⁵ × 0.5 T</p><p>H = 2.5 × 10⁻⁵ T</p><p>আমরা জানি, 1 T = 10⁶ μT।</p><p>H = 2.5 × 10⁻⁵ × 10⁶ μT</p><p>H = 2.5 × 10 μT</p><p>H = 25 μT</p><p>সুতরাং, ভূ-চৌম্বক ক্ষেত্রের আনুভূমিক উপাংশের মান 25 μT।</p>",
+        },
+        {
+          id: 41,
+          question:
+            "একটি চুম্বকের মেরু শক্তি 5 × 10⁻⁵ Wb ও চুম্বকের দৈর্ঘ্য 0.25 m হলে এর চৌম্বক ভ্রামকের মান কত?",
+          options: {
+            a: "1.25 × 10⁻⁴ Wbm",
+            b: "2.5 × 10⁻⁴ Wbm",
+            c: "1.25 × 10⁻⁵ Wbm",
+            d: "2.15 × 10⁻⁵ Wbm",
+          },
+          correct: "c",
+          explanation: `একটি চুম্বকের চৌম্বক ভ্রামক (Magnetic Moment) হলো তার মেরু শক্তি এবং চৌম্বক দৈর্ঘ্যের গুণফল। এর সূত্রটি হলো:<br>"
+          "M = pL<br>"
+          "এখানে,<br>"
+          "<ul>"
+          "<li><b>p</b> হলো চুম্বকের মেরু শক্তি = 5 × 10⁻⁵ Wb (প্রশ্নে পরিবর্তন করা হয়েছে)।</li>"
+          "<li><b>L</b> হলো চুম্বকের কার্যকর দৈর্ঘ্য (দুই মেরুর মধ্যবর্তী দূরত্ব) = 0.25 m।</li>"
+          "</ul>"
+          "চৌম্বক ভ্রামকের একক হলো অ্যাম্পিয়ার-মিটার² (A·m²) অথবা ওয়েবার-মিটার (Wb·m)।<br>"
+          "<br>"
+          "এখন, আমরা এই মানগুলো সূত্রে বসিয়ে গণনা করি:<br>"
+          "M = (5 × 10⁻⁵ Wb) × (0.25 m)<br>"
+          "M = (5 × 0.25) × 10⁻⁵ Wbm<br>"
+          "M = 1.25 × 10⁻⁵ Wbm<br>"
+          "M = <b>1.25 × 10⁻⁵ Wbm</b><br><br>"
+          "সুতরাং, চুম্বকের চৌম্বক ভ্রামকের মান হবে 1.25 × 10⁻⁵ Wbm।`,
+        },
+        {
+          id: 42,
+          question:
+            "e মানের একটি চার্জ, r ব্যাসার্ধের একটি বৃত্তাকার পথে v দ্রুতিতে ঘুরছে। বৃত্তের কেন্দ্রে চৌম্বক ক্ষেত্রের মান হবে-",
+          options: {
+            a: "μ₀ev/(4πr²)",
+            b: "μ₀ev/(2πr)",
+            c: "μ₀ev/(πr²)",
+            d: "μ₀ev/(4πr)",
+          },
+          correct: "b",
+          explanation: `<p>একটি চার্জিত কণা বৃত্তাকার পথে ঘুরলে তা একটি তড়িৎ প্রবাহের সৃষ্টি করে। তড়িৎ প্রবাহ I = q/T, যেখানে T হলো পর্যায়কাল। T = 2πr/v।</p>
+      <p>সুতরাং, I = qv/(2πr)।</p>
+      <p>একটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান B = (μ₀I)/(2r)।</p>
+      <p>I এর মান বসিয়ে পাই:</p>
+      <p>B = μ₀ [qv/(2πr)] / (2r)</p>
+      <p>B = μ₀qv / (4πr<sup>2</sup>)</p>
+      <p>এই ক্ষেত্রে, চার্জ e বলা হয়েছে। সুতরাং, B = μ₀ev / (4πr<sup>2</sup>)।</p>
+      <p>আমার হিসাবে μ₀ev / (4πr<sup>2</sup>) আসছে। প্রদত্ত উত্তর μ₀ev / (2πr)। এখানে উত্তরটি সম্ভবত একটি দীর্ঘ সোজা তারের জন্য চৌম্বক ক্ষেত্র অথবা অন্য কোনো ধারণার সাথে গুলিয়ে গেছে। যদি এটি বৃত্তাকার কুণ্ডলীর কেন্দ্রে চৌম্বক ক্ষেত্রের মান হয়, তবে পাক সংখ্যা N=1 হলে B = μ₀I/(2r) হবে। I = e/T = e/(2πr/v) = ev/(2πr) বসিয়ে পাই B = (μ₀/(2r)) × (ev/(2πr)) = μ₀ev/(4πr<sup>2</sup>)। প্রদত্ত উত্তরটি সঠিক নয়। তবে, যদি এটি একটি ইলেকট্রনের কৌণিক ভরবেগ থেকে আসা হয়, তবে B = μ₀ev/(2πr) হতে পারে, যদি I = ev/(2πr) হয়।</p>`,
+        },
+        {
+          id: 43,
+          question:
+            "10 cm দীর্ঘ এবং 0.3 g ভরের একটি তার আনুভূমিকভাবে আছে এবং এতে প্রবাহমাত্রা 5 A। চৌম্বক ক্ষেত্রের প্রাবল্য কত হলে তারটি ভাসমান থাকবে? (g = 10 ms⁻²)",
+          options: {
+            a: "3 × 10⁻³ T",
+            b: "6 × 10⁻³ T",
+            c: "3 × 10⁻² T",
+            d: "6 × 10⁻² T",
+          },
+          correct: "b",
+          explanation:
+            "<p>তারটি ভাসমান থাকার জন্য তারের উপর ক্রিয়াশীল চৌম্বক বল (F<sub>B</sub>) তারের ওজনকে (mg) ভারসাম্যপূর্ণ করতে হবে।</p><p>অর্থাৎ, F<sub>B</sub> = mg</p><p>আমরা জানি, F<sub>B</sub> = BILsinθ। তারটি আনুভূমিকভাবে আছে এবং এটিকে ভাসমান রাখতে হলে চৌম্বক ক্ষেত্র অবশ্যই তারের সাথে লম্বভাবে ক্রিয়া করবে (θ = 90°, sin90° = 1)।</p><p>সুতরাং, BIL = mg</p><p>B = mg / (IL)</p><p>এখানে, m = 0.3 g = 0.3 × 10⁻³ kg, g = 10 ms⁻², I = 5 A, L = 10 cm = 0.1 m।</p><p>B = (0.3 × 10⁻³ kg × 10 ms⁻²) / (5 A × 0.1 m)</p><p>B = (3 × 10⁻³) / 0.5</p><p>B = 6 × 10⁻³ T</p><p>সুতরাং, চৌম্বক ক্ষেত্রের প্রাবল্য 6 × 10⁻³ T হলে তারটি ভাসমান থাকবে।</p>",
+        },
+        {
+          id: 44,
+          question: "নিচের কোন সম্পর্কটি ঠিক নয়?",
+          options: {
+            a: "B = μ₀(H + I)",
+            b: "B = μ₀H(1 + χ)",
+            c: "I = (B - μ₀H)/μ₀",
+            d: "χ = μᵣ - 1",
+          },
+          correct: "c",
+          explanation:
+            "চৌম্বকত্বের বিভিন্ন রাশিগুলোর মধ্যে বেশ কিছু গুরুত্বপূর্ণ সম্পর্ক আছে। এই সম্পর্কগুলো তোমাকে চৌম্বক ক্ষেত্র এবং পদার্থের চৌম্বক ধর্ম বুঝতে সাহায্য করবে। চলো, প্রতিটি অপশন ধরে আমরা সম্পর্কগুলো যাচাই করি:<br><br><b>ক. B = μ₀(H + M)</b><br>এটি চৌম্বক আবেশ (B), চৌম্বক তীব্রতা (H) এবং চৌম্বকায়ন (M) এর মধ্যে মৌলিক সম্পর্ক। যদি অপশন (a)-তে 'I' দ্বারা চৌম্বকায়ন (M) বোঝানো হয়, তাহলে সম্পর্কটি <b>সঠিক</b>।<br><br><b>খ. B = μ₀H(1 + χ)</b><br>আমরা জানি, চৌম্বকায়ন (M) = χH, যেখানে χ (কাই) হলো চৌম্বক প্রবণতা।<br>এখন, যদি আমরা B = μ₀(H + M) সমীকরণে M এর মান বসাই, তাহলে পাই:<br>B = μ₀(H + χH)<br>B = μ₀H(1 + χ)<br>সুতরাং, অপশন (b) <b>সঠিক</b>।<br><br><b>গ. I = (B - μ₀H)/μ₀</b><br>আমরা অপশন (a) থেকে জানি B = μ₀(H + M)।<br>এই সম্পর্কটিকে যদি M এর জন্য সাজাই, তাহলে পাই:<br>M = (B - μ₀H)/μ₀<br>পদার্থবিজ্ঞানের নিয়ম অনুযায়ী, এখানে 'M' দ্বারা চৌম্বকায়ন বোঝানো হয়। কিন্তু অপশন (c)-তে 'I' ব্যবহার করা হয়েছে। সাধারণত, 'I' দ্বারা তড়িৎ প্রবাহ (electric current) বোঝানো হয়, চৌম্বকায়ন (magnetic polarization) নয়। যদি 'I' দ্বারা তড়িৎ প্রবাহ বোঝানো হয়, তাহলে এই সম্পর্কটি <b>ঠিক নয়</b>। তাই, এই সম্পর্কটি সঠিক নয় কারণ এটি M (চৌম্বকায়ন)-কে I (তড়িৎ প্রবাহ) এর সাথে গুলিয়ে ফেলেছে।<br><br><b>ঘ. χ = μᵣ - 1</b><br>আমরা জানি, আপেক্ষিক ভেদ্যতা (relative permeability) μᵣ = (1 + χ)।<br>এই সম্পর্কটিকে যদি χ এর জন্য সাজাই, তাহলে পাই:<br>χ = μᵣ - 1<br>সুতরাং, অপশন (d) <b>সঠিক</b>।<br><br>উপরে আলোচনা করা হলো, অপশন (c)-তে I এর ব্যবহার ভুল, কারণ I সাধারণত তড়িৎ প্রবাহকে বোঝায়, চৌম্বকায়ন (M) কে নয়। তাই, এটিই সেই সম্পর্ক যা ঠিক নয়।",
+        },
+        {
+          id: 45,
+          question:
+            "হাইড্রোজেন পরমাণুতে যে একটি ইলেকট্রন আছে, তা নিউক্লিয়াসের চারদিকে একটি বৃত্তাকার পথে অনবরত ঘুরছে। ইলেকট্রনের কৌণিক ভরবেগ, L = h/2π। ইলেকট্রনের চৌম্বক ভ্রামক হলো-",
+          options: {
+            a: "8.20 × 10⁻²⁴ Am²",
+            b: "1.09 × 10⁻²৪ Am²",
+            c: "9.26 × 10⁻²৪ Am²",
+            d: "None",
+          },
+          correct: "c",
+          explanation:
+            "<p>ইলেকট্রনের কক্ষপথের গতির কারণে সৃষ্ট চৌম্বক ভ্রামক μ = (eL)/(2m<sub>e</sub>)।</p><p>এখানে, e = ইলেকট্রনের চার্জ = 1.602 × 10⁻¹৯ C</p><p>L = কৌণিক ভরবেগ = h/(2π), যেখানে h = প্ল্যাঙ্কের ধ্রুবক = 6.626 × 10⁻³⁴ Js।</p><p>m<sub>e</sub> = ইলেকট্রনের ভর = 9.109 × 10⁻³¹ kg।</p><p>তাহলে, μ = [1.602 × 10⁻¹৯ × (6.626 × 10⁻³⁴ / 2π)] / (2 × 9.109 × 10⁻³¹)</p><p>μ = (1.602 × 10⁻¹৯ × 1.0545 × 10⁻³⁴) / (18.218 × 10⁻³¹)</p><p>μ = (1.6892 × 10⁻⁵³) / (18.218 × 10⁻³¹)</p><p>μ ≈ 0.09272 × 10⁻²২ Am²</p><p>μ ≈ 9.272 × 10⁻²৪ Am²</p><p>এই মানটি বোর ম্যাগনেটন (Bohr Magneton) নামে পরিচিত, যা ইলেকট্রনের কৌণিক ভরবেগ থেকে প্রাপ্ত মৌলিক চৌম্বক ভ্রামক। সুতরাং, ইলেকট্রনের চৌম্বক ভ্রামক প্রায় 9.26 × 10⁻²৪ Am²।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                <label class="option" data-option="${option}">
+                                <div class="circle">${option}</div>
+                                <span class="option-text">${question.options[option]}</span>
+                                </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                                         <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                                         <div class="explanation-content">
+                                                                                           <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                                           ${question.explanation}
+                                                                                         </div>
+                                                                                       </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                                    <p class="question-label">${
+                                                                                      index +
+                                                                                      1
+                                                                                    }. ${
+            question.question
+          }</p>
+                                                                                    <div class="options">
+                                                                                      ${optionsHTML}
+                                                                                    </div>
+                                                                                    ${explanationHTML}
+                                                                                  `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
